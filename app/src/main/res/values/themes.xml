@@ -1,74 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!--
-        Colors mirror Ui.java so the window matches before the screen is drawn. Material 3 themes
-        so the Material time picker picks up the app's violet palette; the screen itself is drawn
-        in code and doesn't rely on theme styles.
+        Material 3 DayNight. On Android 12+ the colours are replaced at runtime by the
+        wallpaper's (Material You) or by a palette generated from the colour picked in
+        Settings > Appearance. These are the fallback for older phones.
     -->
-    <style name="AppTheme.Light" parent="Theme.Material3.Light.NoActionBar">
+    <style name="AppTheme" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">#5F33E1</item>
         <item name="colorOnPrimary">#FFFFFF</item>
-        <item name="colorPrimaryContainer">#EEE9FF</item>
-        <item name="colorOnPrimaryContainer">#5F33E1</item>
-        <item name="colorSecondaryContainer">#EEE9FF</item>
-        <item name="colorOnSecondaryContainer">#5F33E1</item>
-        <item name="colorTertiaryContainer">#EEE9FF</item>
-        <item name="colorOnTertiaryContainer">#5F33E1</item>
-        <item name="colorSurface">#FFFFFF</item>
-        <item name="colorOnSurface">#24252C</item>
-        <item name="colorOnSurfaceVariant">#6E6A7C</item>
-        <item name="colorSurfaceContainerHigh">#FFFFFF</item>
-        <item name="colorSurfaceContainerHighest">#F4F1FE</item>
-        <item name="colorOutline">#D9D3EE</item>
+        <item name="colorPrimaryContainer">#E7DEFF</item>
+        <item name="colorOnPrimaryContainer">#1D0060</item>
+        <item name="colorSecondaryContainer">#E6DFF9</item>
+        <item name="colorOnSecondaryContainer">#1E192B</item>
         <item name="materialTimePickerTheme">@style/TimePickerTheme</item>
-        <item name="android:colorAccent">#5F33E1</item>
-        <item name="android:colorControlActivated">#5F33E1</item>
-        <item name="android:windowBackground">@color/bg_light</item>
-        <item name="android:statusBarColor">@color/bg_light</item>
-        <item name="android:navigationBarColor">@color/bg_light</item>
-        <item name="android:windowLightStatusBar">true</item>
     </style>
 
-    <style name="AppTheme.Dark" parent="Theme.Material3.Dark.NoActionBar">
-        <item name="colorPrimary">#8B6CFF</item>
-        <item name="colorOnPrimary">#FFFFFF</item>
-        <item name="colorPrimaryContainer">#2B2450</item>
-        <item name="colorOnPrimaryContainer">#D9CEFF</item>
-        <item name="colorSecondaryContainer">#2B2450</item>
-        <item name="colorOnSecondaryContainer">#D9CEFF</item>
-        <item name="colorTertiaryContainer">#2B2450</item>
-        <item name="colorOnTertiaryContainer">#D9CEFF</item>
-        <item name="colorSurface">#1C1A2B</item>
-        <item name="colorOnSurface">#F3F1FA</item>
-        <item name="colorOnSurfaceVariant">#A7A1C0</item>
-        <item name="colorSurfaceContainerHigh">#1C1A2B</item>
-        <item name="colorSurfaceContainerHighest">#26233A</item>
-        <item name="colorOutline">#3A3556</item>
-        <item name="materialTimePickerTheme">@style/TimePickerTheme</item>
-        <item name="android:colorAccent">#8B6CFF</item>
-        <item name="android:colorControlActivated">#8B6CFF</item>
-        <item name="android:windowBackground">@color/bg_dark</item>
-        <item name="android:statusBarColor">@color/bg_dark</item>
-        <item name="android:navigationBarColor">@color/bg_dark</item>
-        <item name="android:windowLightStatusBar">false</item>
-    </style>
-
-    <!--
-        Time picker: Material 3 as is, except the Cancel / OK buttons, whose color would otherwise
-        come from a container color this app doesn't define (they showed up magenta).
-    -->
+    <!-- The time picker's Cancel / OK buttons use the primary colour. -->
     <style name="TimePickerTheme" parent="ThemeOverlay.Material3.MaterialTimePicker">
         <item name="borderlessButtonStyle">@style/TimePickerButton</item>
     </style>
 
     <style name="TimePickerButton" parent="Widget.Material3.Button.TextButton.Dialog">
         <item name="android:textColor">?attr/colorPrimary</item>
-        <item name="android:textStyle">bold</item>
     </style>
-
-    <!-- Launch theme: follows the phone's light/dark setting (see values-night). -->
-    <style name="AppTheme" parent="AppTheme.Light" />
-
-    <color name="bg_light">#FBFAFF</color>
-    <color name="bg_dark">#100E1A</color>
 </resources>

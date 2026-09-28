@@ -78,6 +78,8 @@ public class BriefingService extends Service {
     private Thread worker;
     private volatile boolean stopRequested;
     private volatile boolean playNow;
+    /** True while a briefing is being prepared or spoken (the app shows Stop instead of Play). */
+    static volatile boolean active;
     private volatile TextToSpeech tts;
     private volatile PcmPlayer aiPlayer;
     private volatile int aiLinesSpoken;
@@ -130,6 +132,7 @@ public class BriefingService extends Service {
                 ? intent.getLongExtra(Scheduler.EXTRA_ALARM_TIME, 0) : 0;
         getSystemService(NotificationManager.class).cancel(NOTIF_ALERT);
         acquireWakeLock();
+        active = true;
         worker = new Thread(() -> runBriefing(auto, alarmTime), "briefing");
         worker.start();
         return START_NOT_STICKY;
@@ -203,6 +206,7 @@ public class BriefingService extends Service {
     }
 
     private void finish() {
+        active = false;
         stopForeground(STOP_FOREGROUND_REMOVE);
         stopSelf();
     }

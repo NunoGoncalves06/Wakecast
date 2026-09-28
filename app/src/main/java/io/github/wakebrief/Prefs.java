@@ -74,7 +74,14 @@ public final class Prefs {
     public String theme() { return sp.getString("theme", "system"); }
     public void setTheme(String v) { ed().putString("theme", v).apply(); }
 
-    /** Color of the top card: one of Ui.HERO_KEYS ("custom" uses {@link #heroHue()}). */
+    /**
+     * Use the wallpaper's colours (Material You, Android 12+). On by default, except for people
+     * who already picked a colour in an earlier version.
+     */
+    public boolean dynamicColor() { return sp.getBoolean("dynamic_color", !sp.contains("hero_color")); }
+    public void setDynamicColor(boolean v) { ed().putBoolean("dynamic_color", v).apply(); }
+
+    /** App colour when not using the wallpaper's: one of Ui.HERO_KEYS ("custom" uses {@link #heroHue()}). */
     public String heroColor() { return sp.getString("hero_color", "violet"); }
     public void setHeroColor(String v) { ed().putString("hero_color", v).apply(); }
 
