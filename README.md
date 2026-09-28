@@ -27,7 +27,7 @@ It's a small native Android app (Java, no accounts, no ads, no tracking). Everyt
   It comes with a short tip.
 - **Snooze-aware**: if you snooze, it waits for the next ring.
 - **Morning window**: only alarms inside it (for example 04:00–12:00) get a briefing, so nap alarms stay quiet.
-- **Looks**: light / dark theme, and a colour of your choice (presets or any hue) for the whole app.
+- **Looks like a built-in Android app**: Material You colours taken from your wallpaper (or a colour you pick), light / dark theme, and a proper Settings screen.
 
 ## How it knows when you wake up
 
@@ -50,7 +50,7 @@ Download `Wakecast.apk` from the [Releases](../../releases) page and open it on 
 
 1. Allow installing from the app you opened it with (Files, Drive, WhatsApp…) when asked.
 2. If Play Protect warns about an unknown app: **More details → Install anyway**.
-3. Open Wakecast and complete the **Setup** card: notifications, calendar, exact alarms, unrestricted battery, and your city.
+3. Open Wakecast. If anything is missing (notifications, calendar, exact alarms, unrestricted battery, your city), a **Needs attention** card shows up; tap it to fix everything in **Settings › Permissions & battery**.
 
 Requires Android 8.0 or newer.
 
@@ -67,8 +67,10 @@ To build an APK: **Build › Build App Bundle(s) / APK(s) › Build APK(s)**. Th
 
 | File | What it does |
 |---|---|
-| `MainActivity` | The single settings screen |
-| `Ui` | The app's design system (colours, cards, chips, fields) |
+| `MainActivity` | Home: next briefing, sleep ring, tomorrow's briefing, Play / Stop |
+| `SettingsActivity` | Settings: voice, weather, news, to-dos, schedule, appearance, permissions, about |
+| `BaseActivity`, `Ui` | Shared screen frame (Material You colours, top app bar) and Material 3 building blocks |
+| `Setup` | What the app needs (permissions, city, voice) and how to fix each |
 | `Scheduler`, `AlarmTriggerReceiver`, `SystemEventsReceiver`, `RescheduleJob` | Follow the phone's next alarm |
 | `BriefingService` | Fetches data, waits for the alarm, speaks |
 | `ScriptWriter` | Turns the data into each persona's script |
@@ -86,6 +88,5 @@ To build an APK: **Build › Build App Bundle(s) / APK(s) › Build APK(s)**. Th
   - [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M) by hexgrad (Apache 2.0)
   - Piper "Dii" by OpenVoiceOS (CC BY-NC-SA 4.0, free for personal use)
 - Weather: [Open-Meteo](https://open-meteo.com)
-- Font: [Lexend Deca](https://fonts.google.com/specimen/Lexend+Deca) (SIL Open Font License, see `app/src/main/assets/fonts/`)
 - Icons: [Material Symbols](https://fonts.google.com/icons) (Apache 2.0)
 - UI components: [Material Components for Android](https://github.com/material-components/material-components-android) (Apache 2.0)
