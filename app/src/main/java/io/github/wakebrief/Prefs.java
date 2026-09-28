@@ -3,7 +3,12 @@ package io.github.wakebrief;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 /** All user settings, stored in SharedPreferences. */
 public final class Prefs {
@@ -69,6 +74,30 @@ public final class Prefs {
         if (!raw.isEmpty()) return raw;
         return "pt".equals(lang()) ? DEFAULT_FEEDS_PT : DEFAULT_FEEDS_EN;
     }
+
+    /**
+     * News sites the user added, shown as chips next to the built-in ones: {name, feed URL}.
+     * They stay listed while switched off; {@link #feedsRaw()} holds the ones switched on.
+     */
+    public List<String[]> customSources() {
+        List<String[]> out = new ArrayList<>();
+        for (String line : sp.getString("custom_sources", "").split("\n")) {
+            int tab = line.indexOf('\t');
+            if (tab > 0) out.add(new String[]{line.substring(0, tab), line.substring(tab + 1)});
+        }
+        return out;
+    }
+    public void setCustomSources(List<String[]> list) {
+        StringBuilder b = new StringBuilder();
+        for (String[] s : list) b.append(s[0].replace('\t', ' ').replace('\n', ' ')).append('\t').append(s[1]).append('\n');
+        ed().putString("custom_sources", b.toString().trim()).apply();
+    }
+
+    /** Feed URLs of built-in sources the user deleted from the list. */
+    public Set<String> hiddenSources() {
+        return new HashSet<>(sp.getStringSet("hidden_sources", Collections.emptySet()));
+    }
+    public void setHiddenSources(Set<String> v) { ed().putStringSet("hidden_sources", v).apply(); }
 
     /** "system", "light" or "dark". */
     public String theme() { return sp.getString("theme", "system"); }

@@ -45,8 +45,10 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 
@@ -95,9 +97,7 @@ public class SettingsActivity extends BaseActivity {
     private volatile PcmPlayer samplePlayer;
 
     // news page
-    private EditText feedsInput;
-    private final List<Chip> sourceChips = new ArrayList<>();
-    private boolean bindingFeeds;
+    private ChipGroup sourceGroup;
 
     @Override
     protected void onCreate(Bundle state) {
@@ -478,88 +478,76 @@ public class SettingsActivity extends BaseActivity {
                 v -> v == 0 ? "Off" : String.valueOf(v), p::setHeadlines));
 
         content.addView(ui.header("Sources"));
-        ChipGroup group = new ChipGroup(this);
-        group.setPadding(ui.dp(16), 0, ui.dp(16), 0);
-        sourceChips.clear();
-        for (String[] s : SOURCES) {
-            Chip chip = ui.filterChip(s[0]);
-            chip.setTag(s[1]);
-            chip.setOnClickListener(v -> toggleSource(s[1]));
-            sourceChips.add(chip);
-            group.addView(chip);
-        }
-        content.addView(group, Ui.matchWrap());
-        content.addView(ui.note("Pick sources in the same language as the voice, or add any website below."));
+        sourceGroup = new ChipGroup(this);
+        sourceGroup.setPadding(ui.dp(16), 0, ui.dp(16), 0);
+        content.addView(sourceGroup, Ui.matchWrap());
+        content.addView(ui.note("Tap a source to switch it on or off. Touch and hold to delete it. "
+                + "Pick sources in the same language as the voice."));
 
-        content.addView(ui.header("Your links"));
-        TextInputLayout links = ui.field("Websites or RSS links", "One per line, e.g. economist.com", true);
-        feedsInput = Ui.edit(links);
-        feedsInput.setText(p.feedsRaw());
-        feedsInput.addTextChangedListener(watcher(s -> {
-            if (bindingFeeds) return;
-            p.setFeedsRaw(s);
-            syncSources();
-        }));
-        content.addView(links, ui.margins(16, 0));
+        content.addView(ui.header("Add a news site"));
+        TextInputLayout field = ui.field("Website or RSS link", "e.g. economist.com", false);
+        EditText input = Ui.edit(field);
+        input.setInputType(android.text.InputType.TYPE_CLASS_TEXT | android.text.InputType.TYPE_TEXT_VARIATION_URI);
+        input.setImeOptions(EditorInfo.IME_ACTION_DONE);
+        content.addView(field, ui.margins(16, 0));
         Status status = new Status("");
         status.row.setVisibility(View.GONE);
-        MaterialButton check = ui.button("Check links", Ui.TONAL, R.drawable.ic_link, null);
-        check.setOnClickListener(v -> checkFeeds(check, status));
+        MaterialButton add = ui.button("Add", Ui.TONAL, R.drawable.ic_add, null);
+        add.setOnClickListener(v -> addSource(input, add, status));
+        input.setOnEditorActionListener((v, actionId, e) -> {
+            if (add.isEnabled()) addSource(input, add, status);
+            return true;
+        });
         LinearLayout.LayoutParams lp = Ui.wrap();
         lp.setMargins(ui.dp(16), ui.dp(12), ui.dp(16), 0);
-        content.addView(check, lp);
+        content.addView(add, lp);
         content.addView(status.row, Ui.matchWrap());
-        syncSources();
+
+        adoptActiveFeeds();
+        renderSources();
     }
 
-    /** Finds the feed behind each typed link and swaps it into the list. */
-    private void checkFeeds(MaterialButton check, Status status) {
-        String snapshot = feedsInput.getText().toString();
-        List<String> lines = new ArrayList<>();
-        for (String s : snapshot.split("\\s+")) if (!s.isEmpty()) lines.add(s);
-        if (lines.isEmpty()) {
-            status.done("Add a website or RSS link first.");
-            return;
+    /** Every source chip, {name, feed URL}: the built-in ones (unless deleted), then the user's. */
+    private List<String[]> sources() {
+        Set<String> hidden = p.hiddenSources();
+        List<String[]> out = new ArrayList<>();
+        for (String[] s : SOURCES) if (!hidden.contains(s[1])) out.add(s);
+        out.addAll(p.customSources());
+        return out;
+    }
+
+    /** Feeds switched on without a chip (links typed in earlier versions) get one. */
+    private void adoptActiveFeeds() {
+        Set<String> known = new HashSet<>();
+        for (String[] s : sources()) known.add(s[1]);
+        Set<String> hidden = p.hiddenSources();
+        List<String[]> custom = p.customSources();
+        boolean changed = false;
+        for (String url : activeFeeds()) {
+            if (known.contains(url)) continue;
+            if (!hidden.remove(url)) custom.add(new String[]{FeedFinder.siteName(url), url});
+            known.add(url);
+            changed = true;
         }
-        InputMethodManager imm = getSystemService(InputMethodManager.class);
-        if (imm != null) imm.hideSoftInputFromWindow(feedsInput.getWindowToken(), 0);
-        check.setEnabled(false);
-        status.busy(lines.size() == 1 ? "Looking for the news feed…" : "Looking for news feeds in " + lines.size() + " links…");
-        String lang = p.lang();
-        new Thread(() -> {
-            List<String> resolved = new ArrayList<>();
-            StringBuilder report = new StringBuilder();
-            boolean allOk = true;
-            for (String line : lines) {
-                FeedFinder.Result r = FeedFinder.find(line, lang);
-                if (report.length() > 0) report.append('\n');
-                if (r == null) {
-                    allOk = false;
-                    if (!resolved.contains(line)) resolved.add(line);
-                    report.append("✗  ").append(line).append(" — no news feed found");
-                } else {
-                    if (!resolved.contains(r.feedUrl)) resolved.add(r.feedUrl);
-                    String site = FeedFinder.siteName(line);
-                    report.append("✓  ").append(site);
-                    if (r.viaGoogleNews && !FeedFinder.siteName(r.feedUrl).equals(site)) report.append(" · via Google News");
-                    else if (!r.title.equalsIgnoreCase(site)) report.append(" · ").append(r.title);
-                    report.append(" · ").append(r.headlines).append(r.headlines == 1 ? " headline" : " headlines");
-                }
-            }
-            String joined = String.join("\n", resolved);
-            String msg = allOk ? report.toString() : report + "\nCheck the address, or that you're online.";
-            runOnUiThread(() -> {
-                check.setEnabled(true);
-                if (feedsInput.getText().toString().equals(snapshot)) { // not edited meanwhile
-                    p.setFeedsRaw(joined);
-                    bindingFeeds = true;
-                    feedsInput.setText(joined);
-                    bindingFeeds = false;
-                    syncSources();
-                }
-                status.done(msg);
+        if (changed) {
+            p.setHiddenSources(hidden);
+            p.setCustomSources(custom);
+        }
+    }
+
+    private void renderSources() {
+        sourceGroup.removeAllViews();
+        List<String> active = activeFeeds();
+        for (String[] s : sources()) {
+            Chip chip = ui.filterChip(s[0]);
+            chip.setChecked(active.contains(s[1]));
+            chip.setOnClickListener(v -> toggleSource(chip, s[1]));
+            chip.setOnLongClickListener(v -> {
+                confirmDeleteSource(s);
+                return true;
             });
-        }).start();
+            sourceGroup.addView(chip);
+        }
     }
 
     private List<String> activeFeeds() {
@@ -568,20 +556,96 @@ public class SettingsActivity extends BaseActivity {
         return out;
     }
 
-    private void toggleSource(String url) {
+    private void toggleSource(Chip chip, String url) {
         List<String> list = activeFeeds();
-        if (!list.remove(url)) list.add(url);
-        String joined = String.join("\n", list);
-        p.setFeedsRaw(joined);
-        bindingFeeds = true;
-        feedsInput.setText(joined);
-        bindingFeeds = false;
-        syncSources();
+        if (list.contains(url)) {
+            if (list.size() == 1) { // with none on, the language's default feed would come back
+                chip.setChecked(true);
+                toast("Keep at least one source on. To skip the news, set Headlines to Off.");
+                return;
+            }
+            list.remove(url);
+        } else {
+            list.add(url);
+        }
+        p.setFeedsRaw(String.join("\n", list));
+        chip.setChecked(list.contains(url));
     }
 
-    private void syncSources() {
-        List<String> active = activeFeeds();
-        for (Chip c : sourceChips) c.setChecked(active.contains((String) c.getTag()));
+    private void confirmDeleteSource(String[] source) {
+        ui.dialog()
+                .setIcon(R.drawable.ic_delete)
+                .setTitle("Delete " + source[0] + "?")
+                .setMessage("It's removed from your sources. You can add it again at any time.")
+                .setPositiveButton("Delete", (d, w) -> {
+                    List<String> list = activeFeeds();
+                    if (list.remove(source[1])) p.setFeedsRaw(String.join("\n", list));
+                    boolean builtIn = false;
+                    for (String[] s : SOURCES) if (s[1].equals(source[1])) builtIn = true;
+                    if (builtIn) {
+                        Set<String> hidden = p.hiddenSources();
+                        hidden.add(source[1]);
+                        p.setHiddenSources(hidden);
+                    } else {
+                        List<String[]> custom = p.customSources();
+                        custom.removeIf(s -> s[1].equals(source[1]));
+                        p.setCustomSources(custom);
+                    }
+                    adoptActiveFeeds(); // if that was the last one, the default feed shows up again
+                    renderSources();
+                    toast("Deleted " + source[0]);
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    /** Finds the news feed behind a typed website; if there is one, it becomes a chip, switched on. */
+    private void addSource(EditText input, MaterialButton add, Status status) {
+        String typed = input.getText().toString().trim();
+        if (typed.isEmpty()) {
+            status.done("Type a website first, e.g. economist.com.");
+            return;
+        }
+        InputMethodManager imm = getSystemService(InputMethodManager.class);
+        if (imm != null) imm.hideSoftInputFromWindow(input.getWindowToken(), 0);
+        add.setEnabled(false);
+        status.busy("Looking for the news feed…");
+        String lang = p.lang();
+        new Thread(() -> {
+            FeedFinder.Result r = FeedFinder.find(typed, lang);
+            runOnUiThread(() -> {
+                add.setEnabled(true);
+                if (r == null) {
+                    status.done("No news feed found at " + typed + ". Check the address, or that you're online.");
+                    return;
+                }
+                String name = null;
+                for (String[] s : sources()) if (s[1].equals(r.feedUrl)) name = s[0];
+                boolean isNew = name == null;
+                if (isNew) {
+                    Set<String> hidden = p.hiddenSources();
+                    for (String[] s : SOURCES) if (s[1].equals(r.feedUrl) && hidden.remove(s[1])) name = s[0];
+                    if (name != null) {
+                        p.setHiddenSources(hidden);
+                    } else {
+                        name = FeedFinder.siteName(typed);
+                        List<String[]> custom = p.customSources();
+                        custom.add(new String[]{name, r.feedUrl});
+                        p.setCustomSources(custom);
+                    }
+                }
+                List<String> list = activeFeeds();
+                if (!list.contains(r.feedUrl)) list.add(r.feedUrl);
+                p.setFeedsRaw(String.join("\n", list));
+                input.setText("");
+                renderSources();
+                String site = FeedFinder.siteName(typed);
+                String via = r.viaGoogleNews && !FeedFinder.siteName(r.feedUrl).equals(site) ? " via Google News" : "";
+                status.done(isNew
+                        ? "Added " + name + via + " · " + r.headlines + (r.headlines == 1 ? " headline" : " headlines") + " right now."
+                        : name + " is already in your sources, and it's switched on.");
+            });
+        }).start();
     }
 
     // ================================================================== to-dos

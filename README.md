@@ -9,7 +9,7 @@ It's a small native Android app (Java, no accounts, no ads, no tracking). Everyt
 1. **Weather**: current conditions, high and low, when rain starts, and what to wear (umbrella, coat, sunscreen, wind), plus sunset.
 2. **Your day**: today's events from every calendar on the phone, and how long until the first one.
 3. **To-dos**: reminders you type into the app.
-4. **News**: headlines from any sites you choose. Paste a website (for example `economist.com`) and Wakecast finds its news feed.
+4. **News**: headlines from any sites you choose. Add a website (for example `economist.com`), Wakecast finds its news feed and adds it as a source you can switch on or off; touch and hold a source to delete it.
 
 ## Features
 
