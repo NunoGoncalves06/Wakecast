@@ -618,7 +618,7 @@ public class MainActivity extends FragmentActivity {
         top.addView(emoji, new LinearLayout.LayoutParams(ui.dp(40), ui.dp(40)));
         top.addView(new View(this), Ui.weight(1));
         ImageView check = ui.icon(R.drawable.ic_check_circle, ui.accent, 22);
-        check.setTag("radio"); // never a persona key, so findViewWithTag can't hit the card
+        check.setTag("persona_indicator"); // never a persona key, so findViewWithTag can't hit the card
         top.addView(check);
         card.addView(top, Ui.matchWrap());
 
@@ -648,7 +648,7 @@ public class MainActivity extends FragmentActivity {
             if (on) d.setStroke(ui.dp(2), ui.accent);
             card.setBackground(d);
             card.setSelected(on);
-            View check = card.findViewWithTag("radio");
+            View check = card.findViewWithTag("persona_indicator");
             check.setVisibility(on ? View.VISIBLE : View.INVISIBLE);
         }
     }
