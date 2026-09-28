@@ -529,7 +529,7 @@ public class MainActivity extends FragmentActivity {
                     (String) item[1], button), ui.gapTop(16));
         }
 
-        TextView tip = ui.hint("OnePlus tip: many phones close apps overnight to save battery. In App info › "
+        TextView tip = ui.hint("Android tip: many phones close apps overnight to save battery. In App info › "
                 + "Battery, allow background activity (or choose \"Unrestricted\"), and lock Wake Briefing "
                 + "in Recents if your phone offers it.");
         tip.setPadding(0, ui.dp(16), 0, 0);
