@@ -129,7 +129,7 @@ final class ScriptWriter {
         // ======================================================== The Butler (formal, dry)
         put("butler.en.greet",
                 "Good morning, {name}. It is {time} on {day}. I trust you slept well. Allow me to brief you on the day ahead.",
-                "Ahem. Good morning, {name}. The hour is {time}, {day}. Your morning report is ready, as always.");
+                "Good morning, {name}. The hour is {time}, {day}. Your morning report is ready, as always.");
         put("butler.en.weather", "First, the weather.", "Regarding the weather, {name}.");
         put("butler.en.now",
                 "At present it is {temp} degrees, with {sky}.",
@@ -170,7 +170,7 @@ final class ScriptWriter {
 
         put("butler.pt.greet",
                 "Bom dia, {name}. São {time}. Hoje é {day}. Espero que tenha dormido bem. Permita-me apresentar-lhe o dia.",
-                "Ahem. Bom dia, {name}. São {time}, {day}. O seu relatório matinal está pronto, como sempre.");
+                "Bom dia, {name}. São {time}, {day}. O seu relatório matinal está pronto, como sempre.");
         put("butler.pt.weather", "Em primeiro lugar, o tempo.", "Quanto à meteorologia, {name}.");
         put("butler.pt.now",
                 "Neste momento estão {temp} graus, com {sky}.",
