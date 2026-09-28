@@ -1,0 +1,14 @@
+.gradle/
+.idea/
+.kotlin/
+build/
+local.properties
+*.iml
+captures/
+*.apk
+*.aab
+.DS_Store
+.claude/
+CLAUDE.md
+.cursor/
+AGENTS.md

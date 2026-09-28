@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A sun rising over the horizon. 108dp adaptive-icon canvas, content kept in the safe zone. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFF59E0B"
+        android:pathData="M40,62a14,14 0,0 1,28 0z" />
+    <path
+        android:strokeColor="#FFF59E0B"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:pathData="M54,32L54,40M33,41L38.5,46.5M75,41L69.5,46.5M28,56L35,56M80,56L73,56" />
+    <path
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:pathData="M30,68L78,68" />
+    <path
+        android:strokeColor="#99FFFFFF"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:pathData="M40,76L68,76" />
+</vector>
