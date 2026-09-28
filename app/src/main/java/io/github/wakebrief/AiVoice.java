@@ -50,8 +50,8 @@ final class AiVoice {
      * side, Miro is ~15 dB quieter and carries a static hiss (pauses only ~14 dB under the
      * voice, strong 7-11 kHz noise), while Dii is clean (~38 dB) and speaks at a normal level.
      */
-    static final Pack PORTUGUESE = new Pack("vits-piper-pt_PT-miro-high", "Piper", 67, false,
-            "Voice: \"Miro\" by OpenVoiceOS, CC BY-NC-SA 4.0, free for personal use.");
+    static final Pack PORTUGUESE = new Pack("vits-piper-pt_PT-dii-high", "Piper", 67, false,
+            "Voice: \"Dii\" by OpenVoiceOS, CC BY-NC-SA 4.0, free for personal use.");
 
     static Pack forLang(String lang) {
         return "pt".equals(lang) ? PORTUGUESE : ENGLISH;
