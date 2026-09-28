@@ -10,7 +10,7 @@ import java.nio.charset.StandardCharsets;
 /** Tiny HTTP helper: plain HttpURLConnection, no libraries. */
 final class Net {
 
-    static final String APP_UA = "WakeBriefing/1.0 (Android; open source)";
+    static final String APP_UA = "Wakecast/1.0 (Android; open source)";
     /**
      * Many news sites answer an unknown client with a 403 bot-check page, so news requests
      * identify as a mobile browser.

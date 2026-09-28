@@ -17,7 +17,7 @@ import java.util.Set;
 /** Headlines from any RSS or Atom feed. Free, no account, no key. */
 final class NewsClient {
 
-    private static final String TAG = "WakeBriefing";
+    private static final String TAG = "Wakecast";
 
     private NewsClient() {}
 

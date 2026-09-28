@@ -15,5 +15,5 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-rootProject.name = "WakeBriefing"
+rootProject.name = "Wakecast"
 include(":app")

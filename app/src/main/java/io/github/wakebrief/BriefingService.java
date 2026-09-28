@@ -59,7 +59,7 @@ public class BriefingService extends Service {
     static final String ACTION_PLAY_NOW = "io.github.wakebrief.PLAY_NOW";
     static final String ACTION_STOP = "io.github.wakebrief.STOP";
 
-    private static final String TAG = "WakeBriefing";
+    private static final String TAG = "Wakecast";
     private static final String CH_RUNNING = "briefing";
     private static final String CH_ALERTS = "alerts";
     private static final int NOTIF_RUNNING = 1;
@@ -635,7 +635,7 @@ public class BriefingService extends Service {
     private void acquireWakeLock() {
         if (wakeLock == null) {
             wakeLock = getSystemService(PowerManager.class)
-                    .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "WakeBriefing:briefing");
+                    .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "Wakecast:briefing");
             wakeLock.setReferenceCounted(false);
         }
         wakeLock.acquire(MAX_WAIT_MS + 15L * 60 * 1000);

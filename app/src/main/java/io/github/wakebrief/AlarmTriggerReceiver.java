@@ -30,7 +30,7 @@ public class AlarmTriggerReceiver extends BroadcastReceiver {
         try {
             ctx.startForegroundService(s);
         } catch (RuntimeException e) {
-            Log.e("WakeBriefing", "Could not start briefing service", e);
+            Log.e("Wakecast", "Could not start briefing service", e);
             BriefingService.postTapToHear(ctx);
         }
     }

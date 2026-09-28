@@ -247,7 +247,7 @@ public class MainActivity extends FragmentActivity {
         LinearLayout texts = ui.column();
         texts.setPadding(ui.dp(14), 0, 0, 0);
         texts.addView(ui.text(greeting(), 13.5f, ui.muted));
-        TextView title = ui.bold(name.isEmpty() ? "Wake Briefing" : name, 21, ui.text);
+        TextView title = ui.bold(name.isEmpty() ? "Wakecast" : name, 21, ui.text);
         title.setPadding(0, ui.dp(3), 0, 0);
         texts.addView(title);
         r.addView(texts, Ui.weight(1));
@@ -530,7 +530,7 @@ public class MainActivity extends FragmentActivity {
         }
 
         TextView tip = ui.hint("Android tip: many phones close apps overnight to save battery. In App info › "
-                + "Battery, allow background activity (or choose \"Unrestricted\"), and lock Wake Briefing "
+                + "Battery, allow background activity (or choose \"Unrestricted\"), and lock Wakecast "
                 + "in Recents if your phone offers it.");
         tip.setPadding(0, ui.dp(16), 0, 0);
         checklist.addView(tip);
@@ -711,10 +711,10 @@ public class MainActivity extends FragmentActivity {
                 samplePlayer = player;
                 VoiceLeveler.Stats level = new VoiceLeveler.Stats();
                 float[] samples = VoiceLeveler.process(audio.getSamples(), audio.getSampleRate(), level);
-                Log.d("WakeBriefing", "AI voice sample level: " + level);
+                Log.d("Wakecast", "AI voice sample level: " + level);
                 if (player.write(samples)) player.drain();
             } catch (Throwable e) {
-                Log.e("WakeBriefing", "AI voice sample failed", e);
+                Log.e("Wakecast", "AI voice sample failed", e);
                 runOnUiThread(() -> {
                     resetSampleButton();
                     toast("The AI voice couldn't start, so here's the phone's voice.");
