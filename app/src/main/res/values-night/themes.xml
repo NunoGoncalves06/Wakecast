@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="AppTheme" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="AppTheme" parent="Theme.Material3Expressive.DayNight.NoActionBar">
         <item name="colorPrimary">#CDBDFF</item>
         <item name="colorOnPrimary">#35158F</item>
         <item name="colorPrimaryContainer">#4C2CBC</item>
@@ -8,5 +8,6 @@
         <item name="colorSecondaryContainer">#4A4458</item>
         <item name="colorOnSecondaryContainer">#E8DEF8</item>
         <item name="materialTimePickerTheme">@style/TimePickerTheme</item>
+        <item name="listItemCardViewStyle">@style/ListRow</item>
     </style>
 </resources>

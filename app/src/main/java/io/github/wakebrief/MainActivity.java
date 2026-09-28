@@ -53,6 +53,7 @@ public class MainActivity extends BaseActivity {
     protected void onCreate(Bundle state) {
         super.onCreate(state);
         setTitleText(getString(R.string.app_name));
+        collapsing.setSubtitle(new SimpleDateFormat("EEEE, d MMMM", Locale.US).format(new Date()));
         MenuItem settings = toolbar.getMenu().add("Settings");
         settings.setIcon(R.drawable.ic_settings);
         settings.setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
@@ -65,7 +66,7 @@ public class MainActivity extends BaseActivity {
         attention = ui.column();
         content.addView(attention, Ui.matchWrap());
         content.addView(ui.header("Tomorrow's briefing"));
-        summary = ui.card(content);
+        summary = ui.group(content);
 
         fab.setVisibility(View.VISIBLE);
         fab.setOnClickListener(v -> {
@@ -154,8 +155,8 @@ public class MainActivity extends BaseActivity {
         // Sleep ring: time left until the alarm against 8 hours (see SleepGauge).
         LinearLayout ringBox = ui.column();
         ringBox.setGravity(Gravity.CENTER_HORIZONTAL);
-        heroRing = new Ui.Ring(ui, (on & 0x00FFFFFF) | 0x33000000, on, ui.primaryContainer);
-        ringBox.addView(heroRing, new LinearLayout.LayoutParams(ui.dp(84), ui.dp(84)));
+        heroRing = new Ui.Ring(ui, 88, (on & 0x00FFFFFF) | 0x29000000, on);
+        ringBox.addView(heroRing, Ui.wrap());
         heroAdvice = ui.text("", com.google.android.material.R.attr.textAppearanceLabelMedium, on);
         heroAdvice.setGravity(Gravity.CENTER);
         heroAdvice.setMaxWidth(ui.dp(112));
@@ -254,8 +255,6 @@ public class MainActivity extends BaseActivity {
         List<Setup.Item> items = Setup.items(this, p, tts, ttsReady);
         int missing = Setup.missing(items);
         if (missing == 0) return;
-        LinearLayout c = ui.card(attention);
-        Ui.cardView(c).setCardBackgroundColor(ui.color(com.google.android.material.R.attr.colorErrorContainer, 0xFFF9DEDC));
         int on = ui.color(com.google.android.material.R.attr.colorOnErrorContainer, 0xFF410E0B);
         StringBuilder names = new StringBuilder();
         for (Setup.Item i : items) {
@@ -263,40 +262,45 @@ public class MainActivity extends BaseActivity {
             if (names.length() > 0) names.append(" · ");
             names.append(i.title);
         }
-        LinearLayout row = ui.item(ui.icon(R.drawable.ic_warning, on),
-                missing == 1 ? "1 thing needs your attention" : missing + " things need your attention",
-                names.toString(), ui.icon(R.drawable.ic_chevron_right, on),
-                v -> SettingsActivity.open(this, SettingsActivity.PERMISSIONS));
-        LinearLayout texts = (LinearLayout) row.getChildAt(1);
-        for (int i = 0; i < texts.getChildCount(); i++) ((TextView) texts.getChildAt(i)).setTextColor(on);
-        c.addView(row);
+        LinearLayout texts = ui.column();
+        TextView title = ui.text(missing == 1 ? "1 thing needs your attention" : missing + " things need your attention",
+                com.google.android.material.R.attr.textAppearanceTitleMedium, on);
+        texts.addView(title);
+        texts.addView(ui.text(names, com.google.android.material.R.attr.textAppearanceBodyMedium, on));
+        LinearLayout row = ui.row();
+        LinearLayout.LayoutParams lp = Ui.wrap();
+        lp.rightMargin = ui.dp(16);
+        row.addView(ui.icon(R.drawable.ic_warning, on), lp);
+        row.addView(texts, Ui.weight(1));
+        row.addView(ui.icon(R.drawable.ic_chevron_right, on));
+        View banner = ui.segment(row, v -> SettingsActivity.open(this, SettingsActivity.PERMISSIONS));
+        Ui.cardOf(banner).setCardBackgroundColor(ui.color(com.google.android.material.R.attr.colorErrorContainer, 0xFFF9DEDC));
+        Ui.Group g = ui.group(attention);
+        ((LinearLayout.LayoutParams) g.getLayoutParams()).topMargin = ui.dp(8);
+        g.addView(banner);
     }
 
     // ------------------------------------------------------------------ summary
 
     private void renderSummary() {
         summary.removeAllViews();
-        summary.addView(ui.item(R.drawable.ic_partly_cloudy_day, "Weather",
-                p.hasCity() ? p.cityLabel() : "Set your city", next(),
+        summary.addView(ui.link(R.drawable.ic_partly_cloudy_day, "Weather",
+                p.hasCity() ? p.cityLabel() : "Set your city",
                 v -> SettingsActivity.open(this, SettingsActivity.WEATHER)));
         String engine = AiVoice.willUse(this, p) ? "AI voice" : "Phone voice";
-        summary.addView(ui.item(R.drawable.ic_record_voice_over, "Voice",
+        summary.addView(ui.link(R.drawable.ic_record_voice_over, "Voice",
                 ScriptWriter.personaName(p.persona()) + " · " + engine + " · " + ("pt".equals(p.lang()) ? "Português" : "English"),
-                next(), v -> SettingsActivity.open(this, SettingsActivity.VOICE)));
+                v -> SettingsActivity.open(this, SettingsActivity.VOICE)));
         int feeds = p.feeds().length;
-        summary.addView(ui.item(R.drawable.ic_newspaper, "News",
+        summary.addView(ui.link(R.drawable.ic_newspaper, "News",
                 p.headlines() == 0 ? "Off" : p.headlines() + " headlines · " + feeds + (feeds == 1 ? " source" : " sources"),
-                next(), v -> SettingsActivity.open(this, SettingsActivity.NEWS)));
+                v -> SettingsActivity.open(this, SettingsActivity.NEWS)));
         int todos = 0;
         for (String t : p.todos().split("\\n")) if (!t.trim().isEmpty()) todos++;
-        summary.addView(ui.item(R.drawable.ic_task_alt, "To-dos",
+        summary.addView(ui.link(R.drawable.ic_task_alt, "To-dos",
                 todos == 0 ? "None" : todos + (todos == 1 ? " reminder" : " reminders"),
-                next(), v -> SettingsActivity.open(this, SettingsActivity.TODOS)));
-        summary.addView(ui.item(R.drawable.ic_event, "Calendar", "Today's events are read automatically", null, null));
-    }
-
-    private View next() {
-        return ui.icon(R.drawable.ic_chevron_right, ui.onSurfaceVariant);
+                v -> SettingsActivity.open(this, SettingsActivity.TODOS)));
+        summary.addView(ui.item(ui.badge(R.drawable.ic_event), "Calendar", "Today's events are read automatically", null, null));
     }
 
     // ------------------------------------------------------------------ formatting

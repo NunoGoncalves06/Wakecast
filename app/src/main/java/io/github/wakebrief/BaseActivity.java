@@ -2,7 +2,6 @@ package io.github.wakebrief;
 
 import android.os.Bundle;
 import android.widget.LinearLayout;
-import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -14,6 +13,7 @@ import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.color.DynamicColors;
 import com.google.android.material.color.DynamicColorsOptions;
 import com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton;
+import com.google.android.material.snackbar.Snackbar;
 
 /**
  * Every screen: light/dark from Settings, wallpaper colours (or the chosen colour), edge to
@@ -74,7 +74,10 @@ abstract class BaseActivity extends AppCompatActivity {
         toolbar.setNavigationOnClickListener(v -> finish());
     }
 
+    /** Short message at the bottom (a Material snackbar). */
     void toast(String s) {
-        Toast.makeText(this, s, Toast.LENGTH_SHORT).show();
+        Snackbar bar = Snackbar.make(findViewById(R.id.root), s, Snackbar.LENGTH_SHORT);
+        if (fab.getVisibility() == android.view.View.VISIBLE) bar.setAnchorView(fab); // above the button
+        bar.show();
     }
 }

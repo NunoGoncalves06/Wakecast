@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!--
-        Material 3 DayNight. On Android 12+ the colours are replaced at runtime by the
+        Material 3 Expressive DayNight. On Android 12+ the colours are replaced at runtime by the
         wallpaper's (Material You) or by a palette generated from the colour picked in
         Settings > Appearance. These are the fallback for older phones.
     -->
-    <style name="AppTheme" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="AppTheme" parent="Theme.Material3Expressive.DayNight.NoActionBar">
         <item name="colorPrimary">#5F33E1</item>
         <item name="colorOnPrimary">#FFFFFF</item>
         <item name="colorPrimaryContainer">#E7DEFF</item>
@@ -13,6 +13,7 @@
         <item name="colorSecondaryContainer">#E6DFF9</item>
         <item name="colorOnSecondaryContainer">#1E192B</item>
         <item name="materialTimePickerTheme">@style/TimePickerTheme</item>
+        <item name="listItemCardViewStyle">@style/ListRow</item>
     </style>
 
     <!-- The time picker's Cancel / OK buttons use the primary colour. -->
@@ -20,7 +21,12 @@
         <item name="borderlessButtonStyle">@style/TimePickerButton</item>
     </style>
 
-    <style name="TimePickerButton" parent="Widget.Material3.Button.TextButton.Dialog">
+    <style name="TimePickerButton" parent="Widget.Material3Expressive.Button.TextButton.Dialog">
         <item name="android:textColor">?attr/colorPrimary</item>
+    </style>
+
+    <!-- Rows of the segmented lists; they don't swipe. -->
+    <style name="ListRow" parent="Widget.Material3.ListItemCardView.Segmented">
+        <item name="swipeEnabled">false</item>
     </style>
 </resources>

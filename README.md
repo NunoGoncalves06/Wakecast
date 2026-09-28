@@ -27,7 +27,7 @@ It's a small native Android app (Java, no accounts, no ads, no tracking). Everyt
   It comes with a short tip.
 - **Snooze-aware**: if you snooze, it waits for the next ring.
 - **Morning window**: only alarms inside it (for example 04:00–12:00) get a briefing, so nap alarms stay quiet.
-- **Looks like a built-in Android app**: Material You colours taken from your wallpaper (or a colour you pick), light / dark theme, and a proper Settings screen.
+- **Looks like a built-in Android app**: Material 3 Expressive components (segmented lists, connected button groups, sliders, wavy progress), Material You colours taken from your wallpaper (or a colour you pick), light / dark theme, and a proper Settings screen.
 
 ## How it knows when you wake up
 
@@ -69,7 +69,7 @@ To build an APK: **Build › Build App Bundle(s) / APK(s) › Build APK(s)**. Th
 |---|---|
 | `MainActivity` | Home: next briefing, sleep ring, tomorrow's briefing, Play / Stop |
 | `SettingsActivity` | Settings: voice, weather, news, to-dos, schedule, appearance, permissions, about |
-| `BaseActivity`, `Ui` | Shared screen frame (Material You colours, top app bar) and Material 3 building blocks |
+| `BaseActivity`, `Ui` | Shared screen frame (Material You colours, top app bar) and Material 3 Expressive building blocks |
 | `Setup` | What the app needs (permissions, city, voice) and how to fix each |
 | `Scheduler`, `AlarmTriggerReceiver`, `SystemEventsReceiver`, `RescheduleJob` | Follow the phone's next alarm |
 | `BriefingService` | Fetches data, waits for the alarm, speaks |

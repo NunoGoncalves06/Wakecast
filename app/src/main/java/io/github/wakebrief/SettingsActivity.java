@@ -3,7 +3,7 @@ package io.github.wakebrief;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
-import android.graphics.drawable.GradientDrawable;
+import android.content.res.ColorStateList;
 import android.media.AudioAttributes;
 import android.net.Uri;
 import android.os.Bundle;
@@ -18,16 +18,23 @@ import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
+import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
-import android.widget.RadioButton;
-import android.widget.SeekBar;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
+import androidx.core.graphics.ColorUtils;
+
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.button.MaterialButtonGroup;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 import com.google.android.material.color.DynamicColors;
+import com.google.android.material.loadingindicator.LoadingIndicator;
 import com.google.android.material.progressindicator.LinearProgressIndicator;
+import com.google.android.material.radiobutton.MaterialRadioButton;
+import com.google.android.material.slider.LabelFormatter;
+import com.google.android.material.slider.Slider;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.android.material.timepicker.MaterialTimePicker;
 import com.google.android.material.timepicker.TimeFormat;
@@ -42,11 +49,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
-import java.util.function.IntFunction;
 
 /**
- * Settings, laid out like the phone's own Settings app: a list of categories, each opening its
- * own page. Everything saves as soon as it changes.
+ * Settings, laid out like the phone's own Settings app: segmented lists of categories, each
+ * opening its own page. Everything saves as soon as it changes.
  */
 public class SettingsActivity extends BaseActivity {
 
@@ -156,61 +162,72 @@ public class SettingsActivity extends BaseActivity {
         }
     }
 
+    /** A segmented list under a header (or, without one, after a small gap). */
+    private Ui.Group section(String header) {
+        if (header != null) content.addView(ui.header(header));
+        else content.addView(new View(this), new LinearLayout.LayoutParams(1, ui.dp(16)));
+        return ui.group(content);
+    }
+
     // ================================================================== root
 
     private void rootPage() {
         int missing = Setup.missing(Setup.items(this, p, null, false));
-        link(R.drawable.ic_record_voice_over, "Voice", "Language, personality, AI voice", VOICE);
-        link(R.drawable.ic_partly_cloudy_day, "Weather", p.hasCity() ? p.cityLabel() : "Set your city", WEATHER);
-        link(R.drawable.ic_newspaper, "News", "Headlines and sources", NEWS);
-        link(R.drawable.ic_task_alt, "To-dos", "Reminders read every morning", TODOS);
-        link(R.drawable.ic_schedule, "Schedule", "Morning window, pause, volume", SCHEDULE);
-        link(R.drawable.ic_palette, "Appearance", "Theme and colours", APPEARANCE);
-        link(R.drawable.ic_verified_user, "Permissions & battery",
+        Ui.Group briefing = section(null);
+        link(briefing, R.drawable.ic_record_voice_over, "Voice", "Language, personality, AI voice", VOICE);
+        link(briefing, R.drawable.ic_partly_cloudy_day, "Weather", p.hasCity() ? p.cityLabel() : "Set your city", WEATHER);
+        link(briefing, R.drawable.ic_newspaper, "News", "Headlines and sources", NEWS);
+        link(briefing, R.drawable.ic_task_alt, "To-dos", "Reminders read every morning", TODOS);
+        Ui.Group app = section(null);
+        link(app, R.drawable.ic_schedule, "Schedule", "Morning window, pause, volume", SCHEDULE);
+        link(app, R.drawable.ic_palette, "Appearance", "Theme and colours", APPEARANCE);
+        Ui.Group system = section(null);
+        link(system, R.drawable.ic_verified_user, "Permissions & battery",
                 missing == 0 ? "Everything's allowed" : missing + " need attention", PERMISSIONS);
-        link(R.drawable.ic_info, "About", "Version, source code, credits", ABOUT);
+        link(system, R.drawable.ic_info, "About", "Version, source code, credits", ABOUT);
     }
 
-    private void link(int icon, String title, String summary, String target) {
-        content.addView(ui.item(icon, title, summary, null, v -> open(this, target)));
+    private void link(Ui.Group g, int icon, String title, String summary, String target) {
+        g.addView(ui.link(icon, title, summary, v -> open(this, target)));
     }
 
     // ================================================================== voice
 
     private void voicePage() {
         content.addView(ui.header("Language"));
-        content.addView(ui.choices(new String[]{"English", "Português"},
+        content.addView(ui.choices(new String[]{"English", "Português"}, null,
                 Math.max(0, Arrays.asList(LANG_KEYS).indexOf(p.lang())), i -> {
                     p.setLang(LANG_KEYS[i]);
                     renderAiVoice(); // each language has its own AI voice
-                }), Ui.matchWrap());
+                }));
 
-        content.addView(ui.header("Personality"));
+        Ui.Group personas = section("Personality");
         personaRows.clear();
         for (String key : ScriptWriter.PERSONA_KEYS) {
             TextView emoji = ui.text(ScriptWriter.emoji(key), com.google.android.material.R.attr.textAppearanceHeadlineSmall, ui.onSurface);
             emoji.setGravity(Gravity.CENTER);
             emoji.setLayoutParams(new LinearLayout.LayoutParams(ui.dp(40), ui.dp(40)));
-            RadioButton radio = new RadioButton(this);
+            MaterialRadioButton radio = new MaterialRadioButton(this);
             radio.setClickable(false);
             radio.setTag("persona_indicator"); // never a persona key
-            LinearLayout row = ui.item(emoji, ScriptWriter.personaName(key), ScriptWriter.tagline(key), radio, v -> {
+            View row = ui.item(emoji, ScriptWriter.personaName(key), ScriptWriter.tagline(key), radio, v -> {
                 p.setPersona(key);
                 syncPersonas();
             });
             row.setTag(key);
             personaRows.add(row);
-            content.addView(row);
+            personas.addView(row);
         }
 
         content.addView(ui.header("Voice engine"));
         content.addView(ui.choices(new String[]{"Phone voice", "AI voice"},
+                new int[]{R.drawable.ic_smartphone, R.drawable.ic_auto_awesome},
                 "ai".equals(p.voiceEngine()) ? 1 : 0, i -> {
                     p.setVoiceEngine(i == 1 ? "ai" : "device");
                     renderAiVoice();
-                }), Ui.matchWrap());
+                }));
         aiBox = ui.column();
-        content.addView(aiBox);
+        content.addView(aiBox, Ui.matchWrap());
         renderAiVoice();
 
         content.addView(ui.header("Your name"));
@@ -219,16 +236,16 @@ public class SettingsActivity extends BaseActivity {
         Ui.edit(name).addTextChangedListener(watcher(s -> p.setName(s)));
         content.addView(name, ui.margins(16, 0));
 
-        sampleButton = ui.button("", Ui.TONAL, R.drawable.ic_volume_up, v -> speakSample());
+        sampleButton = ui.button("", Ui.FILLED, R.drawable.ic_volume_up, v -> speakSample());
         LinearLayout.LayoutParams lp = Ui.wrap();
-        lp.setMargins(ui.dp(16), ui.dp(20), ui.dp(16), 0);
+        lp.setMargins(ui.dp(16), ui.dp(24), ui.dp(16), 0);
         content.addView(sampleButton, lp);
         syncPersonas();
     }
 
     private void syncPersonas() {
         for (View row : personaRows) {
-            RadioButton r = row.findViewWithTag("persona_indicator");
+            MaterialRadioButton r = row.findViewWithTag("persona_indicator");
             r.setChecked(row.getTag().equals(p.persona()));
         }
         if (sampleButton != null) sampleButton.setText("Hear " + ScriptWriter.personaName(p.persona()));
@@ -244,21 +261,23 @@ public class SettingsActivity extends BaseActivity {
         }
         AiVoice.Pack pack = AiVoice.forLang(p.lang());
         String language = "pt".equals(p.lang()) ? "Portuguese (Portugal)" : "English";
+        aiBox.addView(new View(this), new LinearLayout.LayoutParams(1, ui.dp(12)));
+        Ui.Group g = ui.group(aiBox);
         if (VoiceDownloader.isRunning(pack)) {
             int pct = VoiceDownloader.percent(pack);
-            aiBox.addView(ui.item(R.drawable.ic_download, "Downloading… " + pct + "%",
+            g.addView(ui.item(R.drawable.ic_download, "Downloading… " + pct + "%",
                     "Keep the app open until it finishes",
                     ui.button("Cancel", Ui.TEXT, 0, v -> VoiceDownloader.cancel(pack)), null));
             LinearProgressIndicator bar = ui.progress();
-            bar.setProgressCompat(pct, true);
-            aiBox.addView(bar, ui.margins(16, 0));
+            bar.setProgressCompat(pct, false);
+            g.addView(ui.segment(bar, null));
         } else if (AiVoice.isInstalled(this, pack)) {
-            aiBox.addView(ui.item(R.drawable.ic_auto_awesome, language + " AI voice ready",
+            g.addView(ui.item(R.drawable.ic_auto_awesome, language + " AI voice ready",
                     pack.name + " · runs on your phone, works offline",
                     ui.button("Remove", Ui.TEXT, 0, v -> confirmRemoveVoice(pack)), null));
             aiBox.addView(ui.note(pack.credit));
         } else {
-            aiBox.addView(ui.item(R.drawable.ic_auto_awesome, "Natural " + language + " AI voice",
+            g.addView(ui.item(R.drawable.ic_auto_awesome, "Natural " + language + " AI voice",
                     "Free and private, works offline. Until it's downloaded, the phone's voice is used.", null, null));
             String error = VoiceDownloader.error(pack);
             if (error != null) {
@@ -266,10 +285,10 @@ public class SettingsActivity extends BaseActivity {
                 e.setTextColor(ui.error);
                 aiBox.addView(e);
             }
-            MaterialButton download = ui.button("Download · " + pack.megabytes + " MB", Ui.FILLED,
+            MaterialButton download = ui.button("Download · " + pack.megabytes + " MB", Ui.TONAL,
                     R.drawable.ic_download, v -> VoiceDownloader.start(this, pack));
             LinearLayout.LayoutParams lp = Ui.wrap();
-            lp.setMargins(ui.dp(56), 0, ui.dp(16), 0);
+            lp.setMargins(ui.dp(16), ui.dp(12), ui.dp(16), 0);
             aiBox.addView(download, lp);
             aiBox.addView(ui.note("Best on Wi-Fi. " + pack.credit));
         }
@@ -384,8 +403,8 @@ public class SettingsActivity extends BaseActivity {
         city.setEndIconDrawable(R.drawable.ic_search);
         city.setEndIconContentDescription("Find city");
         content.addView(city, ui.margins(16, 0));
-        TextView result = ui.note(p.hasCity() ? "Using " + p.cityLabel() : "Not set yet.");
-        content.addView(result);
+        Status result = new Status(p.hasCity() ? "Using " + p.cityLabel() : "Not set yet.");
+        content.addView(result.row, Ui.matchWrap());
         Runnable find = () -> findCity(input, result);
         city.setEndIconOnClickListener(v -> find.run());
         input.setOnEditorActionListener((v, actionId, e) -> {
@@ -396,12 +415,12 @@ public class SettingsActivity extends BaseActivity {
                 + "The briefing mentions rain timing, what to wear, UV and wind."));
     }
 
-    private void findCity(EditText input, TextView result) {
+    private void findCity(EditText input, Status result) {
         String q = input.getText().toString().trim();
         if (q.isEmpty()) return;
         InputMethodManager imm = getSystemService(InputMethodManager.class);
         if (imm != null) imm.hideSoftInputFromWindow(input.getWindowToken(), 0);
-        result.setText("Searching…");
+        result.busy("Searching…");
         String language = p.lang();
         new Thread(() -> {
             String msg;
@@ -418,19 +437,45 @@ public class SettingsActivity extends BaseActivity {
             }
             String m = msg;
             runOnUiThread(() -> {
-                result.setText(m);
+                result.done(m);
                 if (p.hasCity()) input.setText(p.cityLabel());
             });
         }).start();
     }
 
+    /** A line of status text, with a loading indicator in front while something is running. */
+    private final class Status {
+        final LinearLayout row = ui.row();
+        final LoadingIndicator spinner = ui.loading();
+        final TextView text = ui.supporting("");
+
+        Status(String initial) {
+            row.setPadding(ui.dp(28), ui.dp(8), ui.dp(28), ui.dp(8));
+            LinearLayout.LayoutParams lp = Ui.wrap();
+            lp.rightMargin = ui.dp(12);
+            row.addView(spinner, lp);
+            row.addView(text, Ui.weight(1));
+            text.setText(initial);
+        }
+
+        void busy(String s) {
+            row.setVisibility(View.VISIBLE);
+            spinner.setVisibility(View.VISIBLE);
+            text.setText(s);
+        }
+
+        void done(String s) {
+            row.setVisibility(View.VISIBLE);
+            spinner.setVisibility(View.GONE);
+            text.setText(s);
+        }
+    }
+
     // ================================================================== news
 
     private void newsPage() {
-        content.addView(ui.header("Headlines to read"));
-        int[] counts = withValue(new int[]{0, 3, 5, 7, 10}, p.headlines());
-        content.addView(ui.choices(labels(counts, v -> v == 0 ? "Off" : String.valueOf(v)),
-                indexOf(counts, p.headlines()), i -> p.setHeadlines(counts[i])), Ui.matchWrap());
+        section("Headlines").addView(ui.slider("Headlines to read", 0, 15, p.headlines(),
+                v -> v == 0 ? "Off" : String.valueOf(v), p::setHeadlines));
 
         content.addView(ui.header("Sources"));
         ChipGroup group = new ChipGroup(this);
@@ -456,31 +501,30 @@ public class SettingsActivity extends BaseActivity {
             syncSources();
         }));
         content.addView(links, ui.margins(16, 0));
-        TextView status = ui.note("");
-        status.setVisibility(View.GONE);
+        Status status = new Status("");
+        status.row.setVisibility(View.GONE);
         MaterialButton check = ui.button("Check links", Ui.TONAL, R.drawable.ic_link, null);
         check.setOnClickListener(v -> checkFeeds(check, status));
         LinearLayout.LayoutParams lp = Ui.wrap();
         lp.setMargins(ui.dp(16), ui.dp(12), ui.dp(16), 0);
         content.addView(check, lp);
-        content.addView(status);
+        content.addView(status.row, Ui.matchWrap());
         syncSources();
     }
 
     /** Finds the feed behind each typed link and swaps it into the list. */
-    private void checkFeeds(MaterialButton check, TextView status) {
+    private void checkFeeds(MaterialButton check, Status status) {
         String snapshot = feedsInput.getText().toString();
         List<String> lines = new ArrayList<>();
         for (String s : snapshot.split("\\s+")) if (!s.isEmpty()) lines.add(s);
-        status.setVisibility(View.VISIBLE);
         if (lines.isEmpty()) {
-            status.setText("Add a website or RSS link first.");
+            status.done("Add a website or RSS link first.");
             return;
         }
         InputMethodManager imm = getSystemService(InputMethodManager.class);
         if (imm != null) imm.hideSoftInputFromWindow(feedsInput.getWindowToken(), 0);
         check.setEnabled(false);
-        status.setText(lines.size() == 1 ? "Looking for the news feed…" : "Looking for news feeds in " + lines.size() + " links…");
+        status.busy(lines.size() == 1 ? "Looking for the news feed…" : "Looking for news feeds in " + lines.size() + " links…");
         String lang = p.lang();
         new Thread(() -> {
             List<String> resolved = new ArrayList<>();
@@ -513,7 +557,7 @@ public class SettingsActivity extends BaseActivity {
                     bindingFeeds = false;
                     syncSources();
                 }
-                status.setText(msg);
+                status.done(msg);
             });
         }).start();
     }
@@ -553,8 +597,8 @@ public class SettingsActivity extends BaseActivity {
     // ================================================================== schedule
 
     private void schedulePage() {
-        content.addView(ui.header("Morning window"));
-        content.addView(ui.item(R.drawable.ic_bedtime, "Starts at", clockOfDay(this, p.windowStart()), null,
+        Ui.Group window = section("Morning window");
+        window.addView(ui.item(R.drawable.ic_bedtime, "Starts at", null, time(p.windowStart()),
                 v -> pickTime("Morning starts at", p.windowStart(), m -> {
                     if (m >= p.windowEnd()) {
                         toast("The start has to be before " + clockOfDay(this, p.windowEnd()) + ".");
@@ -563,7 +607,7 @@ public class SettingsActivity extends BaseActivity {
                     p.setWindow(m, p.windowEnd());
                     render();
                 })));
-        content.addView(ui.item(R.drawable.ic_alarm, "Ends at", clockOfDay(this, p.windowEnd()), null,
+        window.addView(ui.item(R.drawable.ic_alarm, "Ends at", null, time(p.windowEnd()),
                 v -> pickTime("Morning ends at", p.windowEnd() % 1440, m -> {
                     int end = m == 0 ? 1440 : m; // 00:00 as an end means midnight
                     if (end <= p.windowStart()) {
@@ -575,16 +619,19 @@ public class SettingsActivity extends BaseActivity {
                 })));
         content.addView(ui.note("Alarms outside this window, like a nap alarm, get no briefing."));
 
-        content.addView(ui.header("Pause after you dismiss the alarm"));
-        int[] delays = withValue(new int[]{0, 3, 5, 10, 30}, p.delaySeconds());
-        content.addView(ui.choices(labels(delays, v -> v + " s"), indexOf(delays, p.delaySeconds()),
-                i -> p.setDelaySeconds(delays[i])), Ui.matchWrap());
+        section("After the alarm").addView(ui.slider("Pause before talking", 0, 30, p.delaySeconds(),
+                v -> v + " s", p::setDelaySeconds));
 
-        content.addView(ui.header("Behaviour"));
-        content.addView(ui.switchItem(R.drawable.ic_event, "Once per day",
+        Ui.Group behaviour = section("Behaviour");
+        behaviour.addView(ui.switchItem(R.drawable.ic_event, "Once per day",
                 "Backup alarms after the first briefing stay quiet", p.oncePerDay(), v -> p.setOncePerDay(v == 1)));
-        content.addView(ui.switchItem(R.drawable.ic_volume_up, "Use alarm volume",
+        behaviour.addView(ui.switchItem(R.drawable.ic_volume_up, "Use alarm volume",
                 "Audible even when media volume is off", p.alarmVolume(), v -> p.setAlarmVolume(v == 1)));
+    }
+
+    /** A time shown at the end of a row, in the accent colour. */
+    private TextView time(int minuteOfDay) {
+        return ui.text(clockOfDay(this, minuteOfDay), com.google.android.material.R.attr.textAppearanceTitleLarge, ui.primary);
     }
 
     private void pickTime(String title, int minuteOfDay, IntConsumer onPick) {
@@ -613,97 +660,108 @@ public class SettingsActivity extends BaseActivity {
 
     private void appearancePage() {
         content.addView(ui.header("Theme"));
-        content.addView(ui.choices(new String[]{"System default", "Light", "Dark"},
+        content.addView(ui.choices(new String[]{"System", "Light", "Dark"},
+                new int[]{R.drawable.ic_contrast, R.drawable.ic_light_mode, R.drawable.ic_dark_mode},
                 Math.max(0, Arrays.asList(THEME_KEYS).indexOf(p.theme())), i -> {
                     if (THEME_KEYS[i].equals(p.theme())) return;
                     p.setTheme(THEME_KEYS[i]);
                     androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(nightMode(THEME_KEYS[i]));
-                }), Ui.matchWrap());
+                }));
 
-        content.addView(ui.header("Colours"));
-        boolean dynamicAvailable = DynamicColors.isDynamicColorAvailable();
-        if (dynamicAvailable) {
-            content.addView(ui.switchItem(R.drawable.ic_palette, "Wallpaper colours",
-                    "Match the colours of your wallpaper, like the phone's own apps", p.dynamicColor(), v -> {
-                        p.setDynamicColor(v == 1);
-                        recreate();
-                    }));
+        if (!DynamicColors.isDynamicColorAvailable()) {
+            content.addView(ui.header("Colours"));
+            content.addView(ui.note("Custom colours need Android 12 or newer."));
+            return;
         }
-        if (dynamicAvailable && !p.dynamicColor()) {
-            LinearLayout swatches = ui.row();
-            swatches.setPadding(ui.dp(16), ui.dp(8), ui.dp(16), ui.dp(8));
-            android.widget.HorizontalScrollView strip = new android.widget.HorizontalScrollView(this);
-            strip.setHorizontalScrollBarEnabled(false);
-            strip.addView(swatches);
-            for (int i = 0; i < Ui.HERO_KEYS.length; i++) {
-                String key = Ui.HERO_KEYS[i];
-                View sw = swatch(key, key.equals(p.heroColor()));
-                sw.setContentDescription(Ui.HERO_NAMES[i] + " colour");
-                sw.setOnClickListener(v -> {
-                    p.setHeroColor(key);
+        Ui.Group colours = section("Colours");
+        colours.addView(ui.switchItem(R.drawable.ic_palette, "Wallpaper colours",
+                "Match the colours of your wallpaper, like the phone's own apps", p.dynamicColor(), v -> {
+                    p.setDynamicColor(v == 1);
                     recreate();
-                });
-                LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ui.dp(44), ui.dp(44));
-                lp.rightMargin = ui.dp(12);
-                swatches.addView(sw, lp);
-            }
-            content.addView(strip, Ui.matchWrap());
-            if ("custom".equals(p.heroColor())) {
-                SeekBar hue = new SeekBar(this);
-                hue.setMax(359);
-                hue.setProgress(p.heroHue());
-                GradientDrawable track = new GradientDrawable(GradientDrawable.Orientation.LEFT_RIGHT, RAINBOW);
-                track.setCornerRadius(ui.dp(6));
-                track.setSize(0, ui.dp(12));
-                hue.setProgressDrawable(track);
-                hue.setSplitTrack(false);
-                hue.setContentDescription("Custom colour");
-                hue.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-                    @Override public void onProgressChanged(SeekBar bar, int value, boolean fromUser) {
-                        if (fromUser) p.setHeroHue(value);
-                    }
-                    @Override public void onStartTrackingTouch(SeekBar bar) {}
-                    @Override public void onStopTrackingTouch(SeekBar bar) { recreate(); }
-                });
-                content.addView(hue, ui.margins(16, 8));
-            }
+                }));
+        if (p.dynamicColor()) return;
+
+        MaterialButtonGroup swatches = new MaterialButtonGroup(this);
+        swatches.setSpacing(ui.dp(8));
+        for (int i = 0; i < Ui.HERO_KEYS.length; i++) {
+            swatches.addView(swatch(Ui.HERO_KEYS[i], Ui.HERO_NAMES[i]), new LinearLayout.LayoutParams(ui.dp(52), ui.dp(52)));
         }
-        if (!dynamicAvailable) content.addView(ui.note("Custom colours need Android 12 or newer."));
+        HorizontalScrollView strip = new HorizontalScrollView(this);
+        strip.setHorizontalScrollBarEnabled(false);
+        strip.addView(swatches);
+        colours.addView(ui.segment(strip, null));
+        int chosen = Math.max(0, Arrays.asList(Ui.HERO_KEYS).indexOf(p.heroColor()));
+        strip.post(() -> strip.scrollTo(Math.max(0, swatches.getChildAt(chosen).getLeft() - ui.dp(16)), 0)); // show the chosen one
+
+        if ("custom".equals(p.heroColor())) {
+            int seed = Ui.seed("custom", p.heroHue());
+            LinearLayout col = ui.column();
+            col.addView(ui.body("Custom colour"));
+            Slider hue = new Slider(this);
+            hue.setValueFrom(0);
+            hue.setValueTo(359);
+            hue.setStepSize(1);
+            hue.setValue(p.heroHue());
+            hue.setTickVisible(false);
+            hue.setLabelBehavior(LabelFormatter.LABEL_GONE);
+            hue.setTrackActiveTintList(ColorStateList.valueOf(seed));
+            hue.setThumbTintList(ColorStateList.valueOf(seed));
+            hue.setContentDescription("Custom colour");
+            hue.addOnChangeListener((s, v, fromUser) -> {
+                if (!fromUser) return;
+                int c = Ui.seed("custom", Math.round(v));
+                s.setTrackActiveTintList(ColorStateList.valueOf(c));
+                s.setThumbTintList(ColorStateList.valueOf(c));
+                p.setHeroHue(Math.round(v));
+            });
+            hue.addOnSliderTouchListener(new Slider.OnSliderTouchListener() {
+                @Override public void onStartTrackingTouch(@NonNull Slider s) {}
+                @Override public void onStopTrackingTouch(@NonNull Slider s) { recreate(); }
+            });
+            col.addView(hue, Ui.matchWrap());
+            colours.addView(ui.segment(col, null));
+        }
     }
 
-    private static final int[] RAINBOW = {0xFFFF5252, 0xFFFFB300, 0xFF66BB6A, 0xFF26C6DA,
-            0xFF5C6BC0, 0xFFAB47BC, 0xFFFF5252};
-
-    private View swatch(String key, boolean selected) {
-        View v = new View(this);
-        GradientDrawable d = new GradientDrawable();
-        d.setShape(GradientDrawable.OVAL);
-        if ("custom".equals(key)) {
-            d.setGradientType(GradientDrawable.SWEEP_GRADIENT);
-            d.setColors(RAINBOW);
-        } else {
-            d.setColor(Ui.seed(key, 0));
-        }
-        if (selected) d.setStroke(ui.dp(3), ui.onSurface);
-        v.setBackground(d);
-        return v;
+    /** A round colour button (Material icon button); the chosen one is ticked. */
+    private MaterialButton swatch(String key, String name) {
+        boolean selected = key.equals(p.heroColor());
+        int c = Ui.seed(key, p.heroHue());
+        int on = ColorUtils.calculateLuminance(c) > 0.5 ? 0xFF1C1B1F : 0xFFFFFFFF;
+        MaterialButton b = new MaterialButton(this, null, com.google.android.material.R.attr.materialIconButtonFilledStyle);
+        b.setBackgroundTintList(ColorStateList.valueOf(c));
+        b.setIconTint(ColorStateList.valueOf(on));
+        if (selected) b.setIconResource(R.drawable.ic_check);
+        else if ("custom".equals(key)) b.setIconResource(R.drawable.ic_palette);
+        b.setCheckable(true);
+        b.setChecked(selected);
+        b.setContentDescription(name + " colour");
+        b.setOnClickListener(v -> {
+            if (selected) {
+                b.setChecked(true);
+                return;
+            }
+            p.setHeroColor(key);
+            recreate();
+        });
+        return b;
     }
 
     // ================================================================== permissions
 
     private void permissionsPage() {
-        content.addView(ui.header("Needed for the briefing"));
+        Ui.Group needed = section("Needed for the briefing");
         for (Setup.Item item : Setup.items(this, p, tts, ttsReady)) {
             View trailing = item.ok
                     ? ui.icon(R.drawable.ic_check_circle, ui.primary)
-                    : ui.button(item.action, Ui.TONAL, 0, v -> item.fix.run());
-            content.addView(ui.item(item.icon, item.title, item.ok ? "Allowed" : item.why, trailing, null));
+                    : ui.button(item.action, Ui.FILLED, 0, v -> item.fix.run());
+            needed.addView(ui.item(item.icon, item.title, item.ok ? "Allowed" : item.why, trailing, null));
         }
         content.addView(ui.header("Battery"));
         content.addView(ui.note("Many phones close apps overnight to save battery. In App info › Battery, "
                 + "allow background activity (or choose \"Unrestricted\"), and lock Wakecast in Recents "
                 + "if your phone offers it."));
-        content.addView(ui.item(R.drawable.ic_open_in_new, "Open App info", null, null,
+        ui.group(content).addView(ui.item(R.drawable.ic_open_in_new, "Open App info", null, null,
                 v -> startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
                         Uri.parse("package:" + getPackageName())))));
     }
@@ -718,8 +776,9 @@ public class SettingsActivity extends BaseActivity {
         } catch (Exception ignored) {
             // not shown then
         }
-        content.addView(ui.item(R.drawable.ic_info, getString(R.string.app_name), "Version " + version, null, null));
-        content.addView(ui.item(R.drawable.ic_open_in_new, "Source code", "github.com/NunoGoncalves06/Wakecast", null,
+        Ui.Group app = section(null);
+        app.addView(ui.item(R.drawable.ic_info, getString(R.string.app_name), "Version " + version, null, null));
+        app.addView(ui.item(R.drawable.ic_open_in_new, "Source code", "github.com/NunoGoncalves06/Wakecast", null,
                 v -> startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(REPO)))));
         content.addView(ui.header("Credits"));
         content.addView(ui.note("Weather: Open-Meteo.\n"
@@ -730,25 +789,6 @@ public class SettingsActivity extends BaseActivity {
     }
 
     // ================================================================== helpers
-
-    private static int[] withValue(int[] presets, int value) {
-        for (int v : presets) if (v == value) return presets;
-        int[] out = Arrays.copyOf(presets, presets.length + 1);
-        out[presets.length] = value;
-        Arrays.sort(out);
-        return out;
-    }
-
-    private static String[] labels(int[] values, IntFunction<String> fmt) {
-        String[] out = new String[values.length];
-        for (int i = 0; i < values.length; i++) out[i] = fmt.apply(values[i]);
-        return out;
-    }
-
-    private static int indexOf(int[] values, int value) {
-        for (int i = 0; i < values.length; i++) if (values[i] == value) return i;
-        return 0;
-    }
 
     private static TextWatcher watcher(Consumer<String> onChange) {
         return new TextWatcher() {
