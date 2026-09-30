@@ -1,26 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- A sun rising over the horizon. 108dp adaptive-icon canvas, content kept in the safe zone. -->
+<!--
+    Wakecast: a sun rising on the horizon, broadcasting. A solid half-sun with two signal arcs
+    that fade outward (the briefing being read out). 108dp adaptive-icon canvas; everything sits
+    inside the 66dp safe zone so no launcher mask crops it.
+-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:aapt="http://schemas.android.com/aapt"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
+    <!-- sun -->
+    <path android:pathData="M41,66a13,13 0,0 1,26 0z">
+        <aapt:attr name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="54"
+                android:startY="53"
+                android:endX="54"
+                android:endY="66">
+                <item android:offset="0" android:color="#FFFFE29A" />
+                <item android:offset="1" android:color="#FFFFB45C" />
+            </gradient>
+        </aapt:attr>
+    </path>
+    <!-- signal arcs, fading outward -->
     <path
-        android:fillColor="#FFF59E0B"
-        android:pathData="M40,62a14,14 0,0 1,28 0z" />
+        android:strokeColor="#E6FFD27A"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:pathData="M35.8,55.5A21,21 0,0 1,72.2,55.5" />
     <path
-        android:strokeColor="#FFF59E0B"
+        android:strokeColor="#80FFD27A"
+        android:strokeWidth="5"
+        android:strokeLineCap="round"
+        android:pathData="M28.9,51.5A29,29 0,0 1,79.1,51.5" />
+    <!-- horizon -->
+    <path
+        android:strokeColor="#B3FFFFFF"
         android:strokeWidth="4"
         android:strokeLineCap="round"
-        android:pathData="M54,32L54,40M33,41L38.5,46.5M75,41L69.5,46.5M28,56L35,56M80,56L73,56" />
-    <path
-        android:strokeColor="#FFFFFFFF"
-        android:strokeWidth="4"
-        android:strokeLineCap="round"
-        android:pathData="M30,68L78,68" />
-    <path
-        android:strokeColor="#99FFFFFF"
-        android:strokeWidth="3"
-        android:strokeLineCap="round"
-        android:pathData="M40,76L68,76" />
+        android:pathData="M36,73L72,73" />
 </vector>
