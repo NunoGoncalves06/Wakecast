@@ -33,6 +33,9 @@ targets:
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         # Speaks the briefing with the screen locked, and refreshes weather/news overnight.
         UIBackgroundModes: [audio, fetch]
+        # News feeds can be any site, and some still redirect through plain http.
+        NSAppTransportSecurity:
+          NSAllowsArbitraryLoads: true
         NSCalendarsFullAccessUsageDescription: Wakecast reads the day's events aloud in your morning briefing. They never leave your phone.
         NSAlarmKitUsageDescription: Wakecast sets your wake-up alarms and plays your briefing when you stop them.
     settings:
