@@ -18,6 +18,9 @@ targets:
     platform: iOS
     sources:
       - path: Wakecast
+      # The personalities' lines, shared with the Android app.
+      - path: ../shared/scripts.json
+        buildPhase: resources
     info:
       path: Support/Info.plist
       properties:

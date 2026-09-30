@@ -43,7 +43,9 @@ jobs:
           devices = json.load(sys.stdin)["devices"]
           runtimes = sorted(k for k in devices if "iOS" in k)
           phones = [d for d in devices[runtimes[-1]] if d["name"].startswith("iPhone")]
-          print(phones[-1]["udid"])')
+          # Prefer a current Face ID model (e.g. "iPhone 17 Pro") over the small SE.
+          pro = [d for d in phones if d["name"].endswith(" Pro")]
+          print((pro or phones)[-1]["udid"])')
           echo "udid=$UDID" >> "$GITHUB_OUTPUT"
           xcrun simctl list devices | grep "$UDID"
 
