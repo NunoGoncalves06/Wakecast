@@ -42,7 +42,16 @@ final class AgendaReader {
 
     /** Events for the rest of today, all-day first. Throws SecurityException without permission. */
     static List<Event> today(Context ctx) {
+        return onDay(ctx, System.currentTimeMillis());
+    }
+
+    /**
+     * Events on the day containing {@code anyTimeThatDay} that haven't ended yet, all-day first
+     * (the home screen uses it to preview the alarm's day). Throws SecurityException without permission.
+     */
+    static List<Event> onDay(Context ctx, long anyTimeThatDay) {
         Calendar cal = Calendar.getInstance();
+        cal.setTimeInMillis(anyTimeThatDay);
         cal.set(Calendar.HOUR_OF_DAY, 0);
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
