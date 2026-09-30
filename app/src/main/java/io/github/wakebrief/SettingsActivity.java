@@ -745,52 +745,55 @@ public class SettingsActivity extends BaseActivity {
                 }));
         if (p.dynamicColor()) return;
 
-        MaterialButtonGroup swatches = new MaterialButtonGroup(this);
-        swatches.setSpacing(ui.dp(8));
-        for (int i = 0; i < Ui.HERO_KEYS.length; i++) {
-            swatches.addView(swatch(Ui.HERO_KEYS[i], Ui.HERO_NAMES[i]), new LinearLayout.LayoutParams(ui.dp(52), ui.dp(52)));
+        // Preset colours in rows that wrap, so none hide off the edge of the screen. The last
+        // key ("custom") gets its own row below, which opens the colour picker.
+        final int perRow = 4;
+        int presets = Ui.HERO_KEYS.length - 1;
+        LinearLayout grid = ui.column();
+        for (int start = 0; start < presets; start += perRow) {
+            LinearLayout row = ui.row();
+            for (int i = start; i < start + perRow; i++) {
+                LinearLayout cell = ui.column();
+                cell.setGravity(Gravity.CENTER_HORIZONTAL);
+                cell.setPadding(0, ui.dp(4), 0, ui.dp(4));
+                if (i < presets) {
+                    cell.addView(swatch(Ui.HERO_KEYS[i], Ui.HERO_NAMES[i]),
+                            new LinearLayout.LayoutParams(ui.dp(52), ui.dp(52)));
+                }
+                row.addView(cell, Ui.weight(1)); // empty cells keep the columns aligned
+            }
+            grid.addView(row, Ui.matchWrap());
         }
-        HorizontalScrollView strip = new HorizontalScrollView(this);
-        strip.setHorizontalScrollBarEnabled(false);
-        strip.addView(swatches);
-        colours.addView(ui.segment(strip, null));
-        int chosen = Math.max(0, Arrays.asList(Ui.HERO_KEYS).indexOf(p.heroColor()));
-        strip.post(() -> strip.scrollTo(Math.max(0, swatches.getChildAt(chosen).getLeft() - ui.dp(16)), 0)); // show the chosen one
+        colours.addView(ui.segment(grid, null));
 
-        if ("custom".equals(p.heroColor())) {
-            int seed = Ui.seed("custom", p.heroHue());
-            LinearLayout col = ui.column();
-            col.addView(ui.body("Custom colour"));
-            Slider hue = new Slider(this);
-            hue.setValueFrom(0);
-            hue.setValueTo(359);
-            hue.setStepSize(1);
-            hue.setValue(p.heroHue());
-            hue.setTickVisible(false);
-            hue.setLabelBehavior(LabelFormatter.LABEL_GONE);
-            hue.setTrackActiveTintList(ColorStateList.valueOf(seed));
-            hue.setThumbTintList(ColorStateList.valueOf(seed));
-            hue.setContentDescription("Custom colour");
-            hue.addOnChangeListener((s, v, fromUser) -> {
-                if (!fromUser) return;
-                int c = Ui.seed("custom", Math.round(v));
-                s.setTrackActiveTintList(ColorStateList.valueOf(c));
-                s.setThumbTintList(ColorStateList.valueOf(c));
-                p.setHeroHue(Math.round(v));
-            });
-            hue.addOnSliderTouchListener(new Slider.OnSliderTouchListener() {
-                @Override public void onStartTrackingTouch(@NonNull Slider s) {}
-                @Override public void onStopTrackingTouch(@NonNull Slider s) { recreate(); }
-            });
-            col.addView(hue, Ui.matchWrap());
-            colours.addView(ui.segment(col, null));
-        }
+        // Any colour at all, with the colour picker.
+        boolean customOn = "custom".equals(p.heroColor());
+        LinearLayout customRow = ui.row();
+        LinearLayout texts = ui.column();
+        texts.addView(ui.body("Custom colour"));
+        texts.addView(ui.supporting(customOn
+                ? ColourPicker.hexOf(p.heroCustom()) + " · tap to change"
+                : "Pick any colour you like"));
+        customRow.addView(texts, Ui.weight(1));
+        MaterialButton customSwatch = swatch("custom", "Custom");
+        customSwatch.setOnClickListener(v -> pickCustomColour());
+        customRow.addView(customSwatch, new LinearLayout.LayoutParams(ui.dp(52), ui.dp(52)));
+        colours.addView(ui.segment(customRow, v -> pickCustomColour()));
+    }
+
+    /** Opens the colour picker; the whole app switches to the picked colour. */
+    private void pickCustomColour() {
+        ColourPicker.show(this, p.heroCustom(), c -> {
+            p.setHeroCustom(c);
+            p.setHeroColor("custom");
+            recreate();
+        });
     }
 
     /** A round colour button (Material icon button); the chosen one is ticked. */
     private MaterialButton swatch(String key, String name) {
         boolean selected = key.equals(p.heroColor());
-        int c = Ui.seed(key, p.heroHue());
+        int c = Ui.seed(key, p.heroCustom());
         int on = ColorUtils.calculateLuminance(c) > 0.5 ? 0xFF1C1B1F : 0xFFFFFFFF;
         MaterialButton b = new MaterialButton(this, null, com.google.android.material.R.attr.materialIconButtonFilledStyle);
         b.setBackgroundTintList(ColorStateList.valueOf(c));

@@ -114,9 +114,15 @@ public final class Prefs {
     public String heroColor() { return sp.getString("hero_color", "violet"); }
     public void setHeroColor(String v) { ed().putString("hero_color", v).apply(); }
 
-    /** Hue (0-359) for the "custom" top card color. */
+    /** Hue (0-359) from the old hue-only slider; only used to seed {@link #heroCustom()}. */
     public int heroHue() { return sp.getInt("hero_hue", 265); }
-    public void setHeroHue(int v) { ed().putInt("hero_hue", ((v % 360) + 360) % 360).apply(); }
+
+    /** The exact colour picked with the colour picker (ARGB), used when heroColor() is "custom". */
+    public int heroCustom() {
+        int fromOldSlider = android.graphics.Color.HSVToColor(new float[]{heroHue(), 0.70f, 0.90f});
+        return sp.getInt("hero_custom", fromOldSlider);
+    }
+    public void setHeroCustom(int argb) { ed().putInt("hero_custom", argb | 0xFF000000).apply(); }
 
     public int headlines() { return sp.getInt("headlines", 5); }
     public void setHeadlines(int v) { ed().putInt("headlines", Math.max(0, Math.min(15, v))).apply(); }

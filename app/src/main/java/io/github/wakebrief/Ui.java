@@ -406,9 +406,9 @@ final class Ui {
             0xFF6A3DF0, 0xFF4F46E5, 0xFF1E88E5, 0xFF0F9F95, 0xFF2E9E5B, 0xFFF4743B, 0xFFE0457B, 0xFF3A3F4B,
     };
 
-    /** The seed colour for a choice ("custom" uses {@code hue}). */
-    static int seed(String key, int hue) {
-        if ("custom".equals(key)) return Color.HSVToColor(new float[]{hue % 360, 0.70f, 0.90f});
+    /** The seed colour for a choice ("custom" uses {@code customArgb}, from the colour picker). */
+    static int seed(String key, int customArgb) {
+        if ("custom".equals(key)) return customArgb | 0xFF000000;
         int i = java.util.Arrays.asList(HERO_KEYS).indexOf(key);
         return HERO_SEEDS[i < 0 || i >= HERO_SEEDS.length ? 0 : i];
     }

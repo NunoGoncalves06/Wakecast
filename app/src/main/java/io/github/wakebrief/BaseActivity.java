@@ -28,6 +28,7 @@ abstract class BaseActivity extends AppCompatActivity {
     NestedScrollView scroll;
     LinearLayout content;
     ExtendedFloatingActionButton fab;
+    private String appliedColours;
 
     @Override
     protected void onCreate(Bundle state) {
@@ -35,6 +36,7 @@ abstract class BaseActivity extends AppCompatActivity {
         AppCompatDelegate.setDefaultNightMode(nightMode(p.theme()));
         super.onCreate(state);
         applyColours();
+        appliedColours = colourKey();
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_page);
         toolbar = findViewById(R.id.toolbar);
@@ -51,6 +53,14 @@ abstract class BaseActivity extends AppCompatActivity {
         return AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM;
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // The colours were changed on another screen (Appearance): rebuild this one too, so the
+        // whole app matches without restarting it. Light/dark is handled by AppCompat itself.
+        if (!colourKey().equals(appliedColours)) recreate();
+    }
+
     /** Material You: the wallpaper's palette, or one generated from the chosen colour. */
     private void applyColours() {
         if (!DynamicColors.isDynamicColorAvailable()) return; // older phones keep the theme's
@@ -58,9 +68,14 @@ abstract class BaseActivity extends AppCompatActivity {
             DynamicColors.applyToActivityIfAvailable(this);
         } else {
             DynamicColors.applyToActivityIfAvailable(this, new DynamicColorsOptions.Builder()
-                    .setContentBasedSource(Ui.seed(p.heroColor(), p.heroHue()))
+                    .setContentBasedSource(Ui.seed(p.heroColor(), p.heroCustom()))
                     .build());
         }
+    }
+
+    /** Everything the colours depend on; when it differs from what this screen was built with, rebuild. */
+    private String colourKey() {
+        return p.dynamicColor() + "/" + p.heroColor() + "/" + p.heroCustom();
     }
 
     void setTitleText(String title) {
