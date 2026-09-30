@@ -1,0 +1,65 @@
+# Wakecast for iOS. The Xcode project is generated from this file by XcodeGen
+# (`xcodegen generate` in this folder), so the .xcodeproj is never edited by hand.
+name: Wakecast
+options:
+  bundleIdPrefix: io.github
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.10"
+    MARKETING_VERSION: "1.2"
+    CURRENT_PROJECT_VERSION: "1"
+    DEVELOPMENT_TEAM: ""
+targets:
+  Wakecast:
+    type: application
+    platform: iOS
+    sources:
+      - path: Wakecast
+    info:
+      path: Support/Info.plist
+      properties:
+        CFBundleDisplayName: Wakecast
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        # Speaks the briefing with the screen locked, and refreshes weather/news overnight.
+        UIBackgroundModes: [audio, fetch]
+        NSCalendarsFullAccessUsageDescription: Wakecast reads the day's events aloud in your morning briefing. They never leave your phone.
+        NSAlarmKitUsageDescription: Wakecast sets your wake-up alarms and plays your briefing when you stop them.
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: io.github.wakebrief
+        TARGETED_DEVICE_FAMILY: "1"
+        ENABLE_PREVIEWS: YES
+  WakecastTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources: [WakecastTests]
+    dependencies:
+      - target: Wakecast
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+  WakecastUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [WakecastUITests]
+    dependencies:
+      - target: Wakecast
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+        TEST_TARGET_NAME: Wakecast
+schemes:
+  Wakecast:
+    build:
+      targets:
+        Wakecast: all
+    test:
+      targets: [WakecastTests, WakecastUITests]

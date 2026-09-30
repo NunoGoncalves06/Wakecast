@@ -1,0 +1,122 @@
+# Builds and tests the iOS app on GitHub's macOS machines (no Mac needed locally).
+# Every run uploads simulator screenshots; manual runs and published releases also
+# build an unsigned Wakecast.ipa for AltStore / SideStore.
+name: iOS
+
+on:
+  push:
+    branches: [dev, main]
+    paths: ["ios/**", "shared/**", ".github/workflows/ios.yml"]
+  pull_request:
+    paths: ["ios/**", "shared/**", ".github/workflows/ios.yml"]
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: macos-15
+    timeout-minutes: 45
+    defaults:
+      run:
+        working-directory: ios
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Generate the Xcode project
+        run: |
+          brew install xcodegen
+          xcodegen generate
+
+      - name: Pick an iPhone simulator
+        id: sim
+        run: |
+          UDID=$(xcrun simctl list devices available -j | python3 -c '
+          import json, sys
+          devices = json.load(sys.stdin)["devices"]
+          runtimes = sorted(k for k in devices if "iOS" in k)
+          phones = [d for d in devices[runtimes[-1]] if d["name"].startswith("iPhone")]
+          print(phones[-1]["udid"])')
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          xcrun simctl list devices | grep "$UDID"
+
+      - name: Build and run tests
+        run: |
+          xcodebuild test -quiet \
+            -project Wakecast.xcodeproj -scheme Wakecast \
+            -destination "id=${{ steps.sim.outputs.udid }}" \
+            -derivedDataPath build
+
+      - name: Take screenshots (light and dark)
+        run: |
+          UDID=${{ steps.sim.outputs.udid }}
+          APP=build/Build/Products/Debug-iphonesimulator/Wakecast.app
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl status_bar "$UDID" override --time 9:41 --batteryState charged --batteryLevel 100 --cellularBars 4 --wifiBars 3
+          xcrun simctl install "$UDID" "$APP"
+          mkdir -p screenshots
+          for mode in light dark; do
+            xcrun simctl ui "$UDID" appearance "$mode"
+            xcrun simctl terminate "$UDID" io.github.wakebrief || true
+            xcrun simctl launch "$UDID" io.github.wakebrief
+            sleep 6
+            xcrun simctl io "$UDID" screenshot "screenshots/home-$mode.png"
+          done
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: ios/screenshots
+
+  ipa:
+    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
+    needs: test
+    runs-on: macos-15
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: ios
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Generate the Xcode project
+        run: |
+          brew install xcodegen
+          xcodegen generate
+
+      - name: Build an unsigned app for iPhone
+        run: |
+          xcodebuild build -quiet \
+            -project Wakecast.xcodeproj -scheme Wakecast \
+            -configuration Release -sdk iphoneos -destination "generic/platform=iOS" \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY=""
+
+      - name: Package Wakecast.ipa
+        run: |
+          mkdir -p Payload
+          cp -R build/Build/Products/Release-iphoneos/Wakecast.app Payload/
+          zip -qry Wakecast.ipa Payload
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Wakecast-ipa
+          path: ios/Wakecast.ipa
+
+      - name: Attach to the release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "${{ github.event.release.tag_name }}" Wakecast.ipa --clobber
