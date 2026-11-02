@@ -1,8 +1,8 @@
 # Wakecast
 
-Wakecast turns your morning alarm into a short spoken briefing. When you dismiss the alarm, it reads out the weather, what's on your calendar, your to-dos and the news, in the voice and personality you pick.
+An alarm that reads you a morning briefing when you dismiss it: the weather, your calendar, your to-dos and the news. It runs entirely on the phone, with no account and no tracking.
 
-It's a small native Android app with no accounts, ads or tracking. Everything runs on your phone.
+Part of my portfolio: [nunogoncalves06.github.io](https://nunogoncalves06.github.io).
 
 <p align="center">
   <img src="docs/screenshots/01-home-light.png" width="240" alt="Home screen in light mode: next briefing at 7:00 AM with the sleep ring, and the running order of tomorrow's briefing">
